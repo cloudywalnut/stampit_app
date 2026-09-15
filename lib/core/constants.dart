@@ -8,10 +8,7 @@ class AppConfig {
 
   /// The web app — also where the REST API routes this app calls
   /// (/api/scan, /api/staff-login, /api/coupons/redeem, /api/me) live.
-  /// Pointed at the laptop's LAN IP (not localhost) so a physical phone on
-  /// the same WiFi can reach the local Next.js dev server — swap back to
-  /// https://stampit.digital before shipping.
-  static const webBaseUrl = 'http://192.168.68.8:3000';
+  static const webBaseUrl = 'https://stampit.digital';
 
   static const registerUrl = '$webBaseUrl/signup';
   static const dashboardUrl = '$webBaseUrl/dashboard';

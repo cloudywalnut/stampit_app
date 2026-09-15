@@ -61,12 +61,14 @@ ThemeData buildAppTheme(AppColors c) {
   final displayFont = GoogleFonts.bricolageGrotesque();
   final bodyFont = GoogleFonts.plusJakartaSans();
 
+  final brightness = c == AppColors.dark ? Brightness.dark : Brightness.light;
+
   final base = ThemeData(
-    brightness: c == AppColors.dark ? Brightness.dark : Brightness.light,
+    brightness: brightness,
     scaffoldBackgroundColor: c.background,
     fontFamily: bodyFont.fontFamily,
     colorScheme: ColorScheme(
-      brightness: c == AppColors.dark ? Brightness.dark : Brightness.light,
+      brightness: brightness,
       primary: c.accent,
       onPrimary: c.accentInk,
       secondary: c.brand,

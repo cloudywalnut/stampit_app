@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:stampit_app/controllers/auth_controller.dart';
 import 'package:stampit_app/core/constants.dart';
+import 'package:stampit_app/core/navigation.dart';
 import 'package:stampit_app/core/theme.dart';
 import 'package:stampit_app/views/auth/auth_screen_scaffold.dart';
 import 'package:stampit_app/widgets/create_card_link.dart';
@@ -20,12 +21,12 @@ class LoginView extends StatefulWidget {
 }
 
 class _LoginViewState extends State<LoginView> {
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   Future<void> _submit(AuthController auth) async {
-    final ok = await auth.signInRetailer(_email.text, _password.text);
-    if (ok && mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    final ok = await auth.signInRetailer(_emailController.text, _passwordController.text);
+    if (ok) popToRoot();
   }
 
   Future<void> _openForgotPassword() =>
@@ -33,8 +34,8 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   void dispose() {
-    _email.dispose();
-    _password.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -45,17 +46,22 @@ class _LoginViewState extends State<LoginView> {
       builder: (context, auth, _) {
         return AuthScreenScaffold(
           title: 'Welcome back 👋',
-          subtitle: 'Scan stamps, check your customer list, and manage coupons.',
+          subtitle: 'Scan customer cards, and redeem customer dicount coupons on the go.',
           children: [
             if (auth.error != null) FormErrorBanner(message: auth.error!),
             TextFormField(
-              controller: _email,
+              controller: _emailController,
+              enabled: !auth.isSubmitting,
               keyboardType: TextInputType.emailAddress,
               autofillHints: const [AutofillHints.email],
               decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.mail_outline_rounded)),
             ),
             const SizedBox(height: 16),
-            PasswordField(controller: _password, prefixIcon: Icons.lock_outline_rounded),
+            PasswordField(
+              controller: _passwordController,
+              enabled: !auth.isSubmitting,
+              prefixIcon: Icons.lock_outline_rounded,
+            ),
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerRight,

@@ -30,25 +30,38 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
   design; RLS does the actual access control)
 - `webBaseUrl` — the web app also hosts the REST routes this app calls
   (`/api/scan`, `/api/staff-login`, `/api/coupons/redeem`, `/api/me`).
-  **Currently pointed at a LAN dev IP** (`http://192.168.68.8:3000`), not the
-  production `https://stampit.digital` — this needs to be swapped back before
-  shipping a release build.
+  Points at production `https://stampit.digital`; swap to a LAN IP
+  (`http://<laptop-IP>:3000`) only temporarily for local dev-server testing
+  on a physical device, then swap back before any release build.
+- `ApiClient.onUnauthorized` (wired up in `AuthController`'s constructor) +
+  the global `navigatorKey` in `lib/core/navigation.dart`: any authenticated
+  API call (one that sent a Bearer token) coming back 401 forces a sign-out
+  and pops back to the root route, so an expired/revoked token (staff JWTs
+  expire after 12h server-side, no refresh) bounces the user to the login
+  screen instead of leaving whatever screen was open stuck on a raw
+  "Not signed in." error.
 
 ## Android build config
 
-- `compileSdk` / `targetSdk`: 35 (Flutter's default for this SDK version,
-  taken from `flutter.compileSdkVersion` / `flutter.targetSdkVersion` —
-  not pinned explicitly in `build.gradle.kts`)
+- `compileSdk` / `targetSdk`: **36**, hardcoded in `build.gradle.kts`
+  (Google Play requires targeting API 36 for uploads). Flutter's own
+  default (`flutter.compileSdkVersion`/`targetSdkVersion`) only reaches 36
+  starting Flutter 3.35 — revert to those once this project upgrades past
+  that.
 - `minSdk`: 21 (Flutter default; `flutter_launcher_icons` config also sets
   `min_sdk_android: 21`)
-- NDK: `ndkVersion = flutter.ndkVersion` → resolves to **26.3.11579264**
-  (Flutter 3.29.3's bundled default). Not overridden in `build.gradle.kts`.
+- NDK: `ndkVersion = flutter.ndkVersion` → resolves to **26.3.11579264**.
+  Not overridden in `build.gradle.kts`. Several plugins (`app_links`,
+  `mobile_scanner`, `path_provider_android`, `shared_preferences_android`,
+  `url_launcher_android`) request `27.0.12077973` instead — Gradle warns
+  but builds fine on 26.3.11579264. If a future plugin bump makes 27 a hard
+  requirement, add `ndkVersion = "27.0.12077973"` under `android { }`.
 - Java/Kotlin target: 11
 - Gradle wrapper: 8.10.2 (`android/gradle/wrapper/gradle-wrapper.properties`)
-- `mobile_scanner` is pinned to exact `7.0.1` (not `^7.0.0`) — every release
-  from 7.1.0 onward bumps the plugin's own `compileSdk` requirement to 36,
-  above what this Flutter SDK's default Android toolchain (compileSdk 35 /
-  AGP 8.7.0) supports. 7.0.1 is the newest release still on compileSdk 35.
+- `mobile_scanner` constraint: `^7.0.0`, currently resolving to `7.0.1`.
+- Local Android SDK (`C:\Users\mzm\AppData\Local\Android\sdk`) has
+  platforms `android-35`/`android-36` and build-tools `34.0.0`/`35.0.1`
+  installed — all required by this toolchain, none of it unused cruft.
 
 ### Signing / release build
 
@@ -56,8 +69,10 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
   (`keyAlias`, `keyPassword`, `storeFile`, `storePassword`) — this file is
   gitignored and kept locally, not committed to the repo. No keystore file
   is checked in either.
-- App version: `1.0.0+1` (`pubspec.yaml`), i.e. versionName 1.0.0 /
-  versionCode 1.
+- App version: `1.0.1+3` (`pubspec.yaml`), i.e. versionName 1.0.1 /
+  versionCode 3. **Already published to Play Console once** (the `+1`
+  build) — `versionCode` must strictly increase on every future upload, or
+  Play Console rejects it; `versionName` can be bumped however makes sense.
 
 ### How the AAB is built
 

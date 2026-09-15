@@ -22,6 +22,16 @@ class AppSession {
     this.staffName,
   });
 
+  /// Mirrors the JSON shape GET /api/me returns. token isn't part of that
+  /// response — it's the token used to fetch it, threaded in separately.
+  factory AppSession.fromJson(Map<String, dynamic> json, {required String token}) => AppSession(
+    type: json['type'] == 'staff' ? ActorType.staff : ActorType.retailer,
+    businessName: json['businessName'] as String? ?? '',
+    currency: json['currency'] as String? ?? 'USD',
+    token: token,
+    staffName: json['staffName'] as String?,
+  );
+
   String get displayName {
     if (type == ActorType.staff) return staffName ?? 'Staff';
     return businessName.isNotEmpty ? businessName : 'Your account';

@@ -17,7 +17,7 @@ class ScanErrorToast extends ScanToast {
 }
 
 /// The "Controller" behind the Scan screen — mirrors ScanClient.tsx's state
-/// machine (paused-while-processing, multiplier stepper, toast-then-clear)
+/// machine (multiplier stepper, submit-while-processing, toast-then-clear)
 /// so the native scan flow feels identical to the web one.
 class ScanController extends ChangeNotifier {
   ScanController(this._scanService);
@@ -26,7 +26,6 @@ class ScanController extends ChangeNotifier {
 
   int multiplier = 1;
   bool processing = false;
-  bool cameraPaused = false;
   ScanToast? toast;
 
   Timer? _toastTimer;
@@ -46,13 +45,15 @@ class ScanController extends ChangeNotifier {
     (t) => _scanService.stamp(token: t, objectId: objectId, multiplier: multiplier),
   );
 
-  Future<void> submitCode(String token, String code) =>
-      _submit(token, (t) => _scanService.stamp(token: t, code: code, multiplier: multiplier));
+  Future<void> submitCode(String token, String code) {
+    final trimmed = code.trim();
+    if (trimmed.isEmpty) return Future.value();
+    return _submit(token, (t) => _scanService.stamp(token: t, code: trimmed, multiplier: multiplier));
+  }
 
   Future<void> _submit(String token, Future<ScanResult> Function(String) call) async {
     if (processing) return;
     processing = true;
-    cameraPaused = true;
     notifyListeners();
 
     try {
@@ -65,11 +66,17 @@ class ScanController extends ChangeNotifier {
     }
     notifyListeners();
 
+    // Unlike Redeem's submitting flag, processing stays true through the
+    // whole toast window rather than clearing right after the response:
+    // onDetect keeps firing continuously from the live camera feed, and the
+    // just-scanned QR typically stays in frame for a beat afterward — this
+    // is a deliberate cooldown so that doesn't re-trigger extra stamps for
+    // what was physically one scan. Redeem/Login have no such continuous
+    // re-trigger source (a single manual tap), so they don't need this.
     _toastTimer?.cancel();
     _toastTimer = Timer(const Duration(milliseconds: 2800), () {
       toast = null;
       processing = false;
-      cameraPaused = false;
       notifyListeners();
     });
   }

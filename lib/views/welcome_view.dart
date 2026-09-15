@@ -53,7 +53,7 @@ class WelcomeView extends StatelessWidget {
                   child: Text(
                     "The checkout companion for StampIt loyalty cards. Scan a customer's "
                     'Wallet pass to add a stamp, redeem a coupon they\'ve earned, or jump '
-                    'into the full dashboard for everything else — all from the counter.',
+                    'into the full dashboard for everything else, all from the counter.',
                     textAlign: TextAlign.center,
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: c.inkSoft, height: 1.45),
                   ),

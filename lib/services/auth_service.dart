@@ -45,12 +45,6 @@ class AuthService {
 
   Future<AppSession> fetchSession(String token) async {
     final json = await ApiClient.get('/api/me', token: token);
-    return AppSession(
-      type: json['type'] == 'staff' ? ActorType.staff : ActorType.retailer,
-      businessName: json['businessName'] as String? ?? '',
-      currency: json['currency'] as String? ?? 'USD',
-      token: token,
-      staffName: json['staffName'] as String?,
-    );
+    return AppSession.fromJson(json, token: token);
   }
 }

@@ -47,6 +47,7 @@ class _RedeemViewState extends State<RedeemView> {
                   const SizedBox(height: 16),
                   TextField(
                     controller: _codeController,
+                    enabled: !redeem.submitting,
                     maxLength: 6,
                     textCapitalization: TextCapitalization.characters,
                     textAlign: TextAlign.center,
@@ -61,7 +62,7 @@ class _RedeemViewState extends State<RedeemView> {
                     onPressed: () => redeem.redeem(session.token, _codeController.text),
                   ),
                   const Spacer(),
-                  if (redeem.toast != null) _buildToast(redeem.toast!, session.currency),
+                  if (redeem.toast != null) _ToastCard(toast: redeem.toast!, currency: session.currency),
                 ],
               );
             },
@@ -70,10 +71,18 @@ class _RedeemViewState extends State<RedeemView> {
       ),
     );
   }
+}
 
-  Widget _buildToast(RedeemToast toast, String currency) {
+class _ToastCard extends StatelessWidget {
+  const _ToastCard({required this.toast, required this.currency});
+
+  final RedeemToast toast;
+  final String currency;
+
+  @override
+  Widget build(BuildContext context) {
     if (toast is RedeemErrorToast) {
-      return ToastBanner(isError: true, child: Text(toast.message));
+      return ToastBanner(isError: true, child: Text((toast as RedeemErrorToast).message));
     }
 
     final result = (toast as RedeemSuccessToast).result;

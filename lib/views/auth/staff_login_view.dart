@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stampit_app/controllers/auth_controller.dart';
+import 'package:stampit_app/core/navigation.dart';
 import 'package:stampit_app/views/auth/auth_screen_scaffold.dart';
 import 'package:stampit_app/widgets/form_error_banner.dart';
 import 'package:stampit_app/widgets/password_field.dart';
@@ -17,18 +18,18 @@ class StaffLoginView extends StatefulWidget {
 }
 
 class _StaffLoginViewState extends State<StaffLoginView> {
-  final _username = TextEditingController();
-  final _password = TextEditingController();
+  final _usernameController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   Future<void> _submit(AuthController auth) async {
-    final ok = await auth.signInStaff(_username.text, _password.text);
-    if (ok && mounted) Navigator.of(context).popUntil((route) => route.isFirst);
+    final ok = await auth.signInStaff(_usernameController.text, _passwordController.text);
+    if (ok) popToRoot();
   }
 
   @override
   void dispose() {
-    _username.dispose();
-    _password.dispose();
+    _usernameController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -42,12 +43,17 @@ class _StaffLoginViewState extends State<StaffLoginView> {
           children: [
             if (auth.error != null) FormErrorBanner(message: auth.error!),
             TextFormField(
-              controller: _username,
+              controller: _usernameController,
+              enabled: !auth.isSubmitting,
               textCapitalization: TextCapitalization.none,
               decoration: const InputDecoration(labelText: 'Username', prefixIcon: Icon(Icons.person_outline_rounded)),
             ),
             const SizedBox(height: 16),
-            PasswordField(controller: _password, prefixIcon: Icons.lock_outline_rounded),
+            PasswordField(
+              controller: _passwordController,
+              enabled: !auth.isSubmitting,
+              prefixIcon: Icons.lock_outline_rounded,
+            ),
             const SizedBox(height: 24),
             PrimaryButton(
               label: 'Sign in',

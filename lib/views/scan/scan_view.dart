@@ -3,6 +3,7 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
 import 'package:stampit_app/controllers/auth_controller.dart';
 import 'package:stampit_app/controllers/scan_controller.dart';
+import 'package:stampit_app/core/theme.dart';
 import 'package:stampit_app/widgets/toast_banner.dart';
 
 /// Native camera scan — mirrors ScanClient.tsx: point-and-scan a customer's
@@ -25,9 +26,8 @@ class _ScanViewState extends State<ScanView> {
   }
 
   void _handleManualSubmit(ScanController scan, String token) {
-    final code = _codeController.text.trim();
-    if (code.isEmpty) return;
-    scan.submitCode(token, code);
+    if (scan.processing) return;
+    scan.submitCode(token, _codeController.text);
     _codeController.clear();
   }
 
@@ -51,6 +51,19 @@ class _ScanViewState extends State<ScanView> {
             children: [
               MobileScanner(controller: _cameraController, onDetect: (c) => _handleDetect(c, scan, token)),
 
+              // Dims the feed while a stamp request is in flight. Camera
+              // hardware is left running throughout (onDetect keeps firing
+              // but scan.processing gates it) — this is visual only, and
+              // its opaque hit-testing also blocks taps on the feed
+              // underneath, matching the rest of the screen being disabled.
+              if (scan.processing)
+                const Positioned.fill(
+                  child: ColoredBox(
+                    color: Color(0x59000000),
+                    child: Center(child: CircularProgressIndicator(color: Colors.white)),
+                  ),
+                ),
+
               SafeArea(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -72,6 +85,7 @@ class _ScanViewState extends State<ScanView> {
                       _ManualEntryBar(
                         controller: _codeController,
                         multiplier: scan.multiplier,
+                        loading: scan.processing,
                         onIncrement: scan.incrementMultiplier,
                         onDecrement: scan.decrementMultiplier,
                         onSubmit: () => _handleManualSubmit(scan, token),
@@ -86,7 +100,16 @@ class _ScanViewState extends State<ScanView> {
                   left: 20,
                   right: 20,
                   bottom: 32,
-                  child: _buildToast(scan.toast!),
+                  // A Positioned child measures against the Stack's own full-
+                  // bleed box, not the SafeArea above (a sibling, not an
+                  // ancestor) — so without this, `bottom: 32` is 32px above
+                  // the literal screen edge, which can sit under the home
+                  // indicator / gesture nav bar on devices with a bottom
+                  // inset. This SafeArea adds that inset on top of the 32px.
+                  child: SafeArea(
+                    top: false,
+                    child: _ToastCard(toast: scan.toast!),
+                  ),
                 ),
             ],
           );
@@ -94,10 +117,17 @@ class _ScanViewState extends State<ScanView> {
       ),
     );
   }
+}
 
-  Widget _buildToast(ScanToast toast) {
+class _ToastCard extends StatelessWidget {
+  const _ToastCard({required this.toast});
+
+  final ScanToast toast;
+
+  @override
+  Widget build(BuildContext context) {
     if (toast is ScanErrorToast) {
-      return ToastBanner(isError: true, child: Text(toast.message));
+      return ToastBanner(isError: true, child: Text((toast as ScanErrorToast).message));
     }
 
     final result = (toast as ScanSuccessToast).result;
@@ -150,6 +180,7 @@ class _ManualEntryBar extends StatelessWidget {
   const _ManualEntryBar({
     required this.controller,
     required this.multiplier,
+    required this.loading,
     required this.onIncrement,
     required this.onDecrement,
     required this.onSubmit,
@@ -157,6 +188,7 @@ class _ManualEntryBar extends StatelessWidget {
 
   final TextEditingController controller;
   final int multiplier;
+  final bool loading;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onSubmit;
@@ -171,6 +203,7 @@ class _ManualEntryBar extends StatelessWidget {
           Expanded(
             child: TextField(
               controller: controller,
+              enabled: !loading,
               maxLength: 6,
               textCapitalization: TextCapitalization.characters,
               style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 2),
@@ -178,7 +211,7 @@ class _ManualEntryBar extends StatelessWidget {
                 filled: false,
                 border: InputBorder.none,
                 counterText: '',
-                hintText: 'No QR? — Enter code',
+                hintText: 'Enter code',
                 hintStyle: TextStyle(color: Colors.white54, fontWeight: FontWeight.w500, letterSpacing: 0),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16),
               ),
@@ -186,15 +219,30 @@ class _ManualEntryBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          _MultiplierStepper(value: multiplier, onIncrement: onIncrement, onDecrement: onDecrement),
+          _MultiplierStepper(
+            value: multiplier,
+            enabled: !loading,
+            onIncrement: onIncrement,
+            onDecrement: onDecrement,
+          ),
           const SizedBox(width: 8),
           IconButton(
+            // Fixed brand color, not context.colors/Theme — this whole
+            // screen is a dark camera overlay that deliberately ignores
+            // light/dark mode, so this button shouldn't be the one thing
+            // on it that shifts with system theme.
             style: IconButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+              backgroundColor: AppColors.light.accent,
+              foregroundColor: AppColors.light.accentInk,
             ),
-            icon: const Icon(Icons.check),
-            onPressed: onSubmit,
+            icon: loading
+                ? SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.4, color: AppColors.light.accentInk),
+                  )
+                : const Icon(Icons.check),
+            onPressed: loading ? null : onSubmit,
           ),
         ],
       ),
@@ -203,9 +251,15 @@ class _ManualEntryBar extends StatelessWidget {
 }
 
 class _MultiplierStepper extends StatelessWidget {
-  const _MultiplierStepper({required this.value, required this.onIncrement, required this.onDecrement});
+  const _MultiplierStepper({
+    required this.value,
+    required this.enabled,
+    required this.onIncrement,
+    required this.onDecrement,
+  });
 
   final int value;
+  final bool enabled;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
 
@@ -224,7 +278,7 @@ class _MultiplierStepper extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.remove, color: Colors.white, size: 18),
-            onPressed: onDecrement,
+            onPressed: enabled ? onDecrement : null,
           ),
           SizedBox(
             width: 22,
@@ -237,7 +291,7 @@ class _MultiplierStepper extends StatelessWidget {
           IconButton(
             visualDensity: VisualDensity.compact,
             icon: const Icon(Icons.add, color: Colors.white, size: 18),
-            onPressed: onIncrement,
+            onPressed: enabled ? onIncrement : null,
           ),
         ],
       ),

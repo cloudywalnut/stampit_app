@@ -15,7 +15,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "digital.stampit.stampit_app"
-    compileSdk = flutter.compileSdkVersion
+    // Hardcoded, not flutter.compileSdkVersion — Flutter 3.29.3 still
+    // defaults to 35 (only 3.35+ defaults to 36), but Google Play requires
+    // targeting API 36 for uploads as of August 31, 2026. AGP 8.7.0 already
+    // supports compileSdk 36 (needs only 8.1.0+), so this didn't need a
+    // Flutter/AGP upgrade — just this override. Revert to
+    // flutter.compileSdkVersion once the project's Flutter SDK is upgraded
+    // past 3.35 and this stops being necessary.
+    compileSdk = 36
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -33,7 +40,9 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Hardcoded to match compileSdk above — same Play Store API-36
+        // requirement, same "not a Flutter default yet" reasoning.
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

@@ -23,148 +23,161 @@ class HomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    final auth = context.watch<AuthController>();
-    final session = auth.session!;
 
-    return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+    return Consumer<AuthController>(
+      builder: (context, auth, _) {
+        final session = auth.session!;
+        return Scaffold(
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text.rich(
-                          TextSpan(
-                            style: GoogleFonts.bricolageGrotesque(
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                              color: c.ink,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text.rich(
+                              TextSpan(
+                                style: GoogleFonts.bricolageGrotesque(
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                  color: c.ink,
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Stamp'),
+                                  TextSpan(text: 'It', style: TextStyle(color: c.brand)),
+                                ],
+                              ),
                             ),
-                            children: [
-                              const TextSpan(text: 'Stamp'),
-                              TextSpan(text: 'It', style: TextStyle(color: c.brand)),
-                            ],
+                            const SizedBox(height: 2),
+                            Text(
+                              'Loyalty made simple. Rewards made better.',
+                              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c.inkSoft),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.logout_rounded),
+                        tooltip: 'Sign out',
+                        onPressed: () => auth.signOut(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+                  Text(
+                    'Welcome back,',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.inkSoft),
+                  ),
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          session.displayName,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.bricolageGrotesque(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            color: c.ink,
                           ),
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'Loyalty made simple. Rewards made better.',
-                          style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: c.inkSoft),
+                      ),
+                      const SizedBox(width: 6),
+                      const Text('👋', style: TextStyle(fontSize: 22)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.card_giftcard_rounded, color: c.brand, size: 32),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text.rich(
+                                TextSpan(
+                                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: c.ink),
+                                  children: [
+                                    const TextSpan(text: 'Give stamps, keep them '),
+                                    TextSpan(text: 'coming.', style: TextStyle(color: c.accent)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                "Scan a customer's Wallet QR to add a stamp instantly.",
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: c.inkSoft,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.logout_rounded),
-                    tooltip: 'Sign out',
-                    onPressed: () => auth.signOut(),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _DashboardTile(
+                            icon: Icons.qr_code_scanner_rounded,
+                            label: 'Scan',
+                            description: "Add a stamp to a customer's card",
+                            color: c.accent,
+                            onColor: c.accentInk,
+                            onTap: () =>
+                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanView())),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _DashboardTile(
+                            icon: Icons.confirmation_number_rounded,
+                            label: 'Redeem',
+                            description: "Redeem the coupon",
+                            color: c.brand,
+                            onColor: c.brandInk,
+                            onTap: () =>
+                                Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RedeemView())),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _LinkRow(
+                    icon: Icons.trending_up_rounded,
+                    title: 'Track your progress',
+                    subtitle: 'View your customer activity',
+                    onTap: _openAnalytics,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: _openDashboard,
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('View full dashboard'),
                   ),
                 ],
               ),
-              const SizedBox(height: 28),
-              Text(
-                'Welcome back,',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: c.inkSoft),
-              ),
-              Row(
-                children: [
-                  Flexible(
-                    child: Text(
-                      session.displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.bricolageGrotesque(fontSize: 24, fontWeight: FontWeight.w800, color: c.ink),
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  const Text('👋', style: TextStyle(fontSize: 22)),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(color: c.surface, borderRadius: BorderRadius.circular(20)),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.card_giftcard_rounded, color: c.brand, size: 32),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text.rich(
-                            TextSpan(
-                              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: c.ink),
-                              children: [
-                                const TextSpan(text: 'Collect stamps, keep them '),
-                                TextSpan(text: 'coming back.', style: TextStyle(color: c.accent)),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            "Scan a customer's Wallet QR to add a stamp instantly.",
-                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: c.inkSoft, height: 1.3),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              Expanded(
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _DashboardTile(
-                        icon: Icons.qr_code_scanner_rounded,
-                        label: 'Scan',
-                        description: "Add a stamp to a customer's card",
-                        color: c.accent,
-                        onColor: c.accentInk,
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const ScanView())),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _DashboardTile(
-                        icon: Icons.confirmation_number_rounded,
-                        label: 'Redeem',
-                        description: "Redeem the coupon",
-                        color: c.brand,
-                        onColor: c.brandInk,
-                        onTap: () =>
-                            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const RedeemView())),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              _LinkRow(
-                icon: Icons.trending_up_rounded,
-                title: 'Track your progress',
-                subtitle: 'View your customer activity',
-                onTap: _openAnalytics,
-              ),
-              const SizedBox(height: 12),
-              OutlinedButton.icon(
-                onPressed: _openDashboard,
-                icon: const Icon(Icons.open_in_new, size: 18),
-                label: const Text('View full dashboard'),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

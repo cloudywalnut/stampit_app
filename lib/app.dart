@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:stampit_app/controllers/auth_controller.dart';
 import 'package:stampit_app/controllers/redeem_controller.dart';
 import 'package:stampit_app/controllers/scan_controller.dart';
+import 'package:stampit_app/core/navigation.dart';
 import 'package:stampit_app/core/theme.dart';
 import 'package:stampit_app/services/auth_service.dart';
 import 'package:stampit_app/services/coupon_service.dart';
@@ -26,6 +27,7 @@ class StampItApp extends StatelessWidget {
         ChangeNotifierProvider(create: (ctx) => RedeemController(ctx.read<CouponService>())),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         title: 'StampIt',
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(AppColors.light),

@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:stampit_app/models/session.dart' show AppSession, ActorType;
-import 'package:stampit_app/services/auth_service.dart';
+import 'package:stampit_app/core/navigation.dart';
+import 'package:stampit_app/models/session.dart';
+import 'package:stampit_app/services/api_client.dart';
 import 'package:stampit_app/services/api_exception.dart';
+import 'package:stampit_app/services/auth_service.dart';
 
 enum AuthStatus { bootstrapping, signedOut, signedIn }
 
@@ -10,7 +12,13 @@ enum AuthStatus { bootstrapping, signedOut, signedIn }
 /// via Provider. Views only read state and call methods here; all
 /// auth-service/API orchestration lives in this class.
 class AuthController extends ChangeNotifier {
-  AuthController(this._authService);
+  AuthController(this._authService) {
+    // A 401 from anywhere (Scan, Redeem, ...) mid-session means the token
+    // expired or was revoked — sign out and surface the login screen right
+    // away instead of leaving whatever screen was open stuck on a raw
+    // "Not signed in." error.
+    ApiClient.onUnauthorized = _handleSessionExpired;
+  }
 
   final AuthService _authService;
 
@@ -86,5 +94,15 @@ class AuthController extends ChangeNotifier {
     session = null;
     status = AuthStatus.signedOut;
     notifyListeners();
+  }
+
+  /// Guarded to signedIn-only so this never interferes with a bootstrap()
+  /// or sign-in attempt's own 401 handling (neither has a session to expire
+  /// yet). Pops any pushed route (Scan/Redeem) so the login screen — which
+  /// AuthGate now renders once status flips — is what the user actually sees.
+  Future<void> _handleSessionExpired() async {
+    if (status != AuthStatus.signedIn) return;
+    await signOut();
+    popToRoot();
   }
 }
