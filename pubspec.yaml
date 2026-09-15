@@ -2,7 +2,7 @@ name: stampit_app
 description: "StampIt staff app: scan and redeem coupons on the go."
 publish_to: 'none'
 
-version: 1.0.1+3
+version: 1.0.2+5
 
 environment:
   sdk: ^3.7.2
