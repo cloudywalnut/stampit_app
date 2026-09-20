@@ -21,7 +21,11 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
   authenticated app based on `AuthController`
 - Scan: `scan_view.dart` + `ScanController` + `ScanService` — QR scanning via
   `mobile_scanner`
-- Redeem: `redeem_view.dart` + `RedeemController` + `CouponService`
+- Redeem: `redeem_view.dart` + `RedeemController` + `CouponService` — the
+  web Coupons page's counterpart: the redeem form on top, then the coupon list
+  below (Redeemed/Available tabs, search by code or customer name, all
+  client-side over one `GET /api/coupons` fetch via `CouponsController`;
+  re-fetched after a successful redeem)
 - Home: `home_view.dart`
 
 ## Backend wiring (`lib/core/constants.dart`)
@@ -29,7 +33,8 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
 - Supabase URL/anon key: same project the web app uses (anon key is public by
   design; RLS does the actual access control)
 - `webBaseUrl` — the web app also hosts the REST routes this app calls
-  (`/api/scan`, `/api/staff-login`, `/api/coupons/redeem`, `/api/me`).
+  (`/api/scan`, `/api/staff-login`, `/api/coupons`, `/api/coupons/redeem`,
+  `/api/me`).
   Points at production `https://stampit.digital`; swap to a LAN IP
   (`http://<laptop-IP>:3000`) only temporarily for local dev-server testing
   on a physical device, then swap back before any release build.
@@ -69,10 +74,10 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
   (`keyAlias`, `keyPassword`, `storeFile`, `storePassword`) — this file is
   gitignored and kept locally, not committed to the repo. No keystore file
   is checked in either.
-- App version: `1.0.1+3` (`pubspec.yaml`), i.e. versionName 1.0.1 /
-  versionCode 3. **Already published to Play Console once** (the `+1`
-  build) — `versionCode` must strictly increase on every future upload, or
-  Play Console rejects it; `versionName` can be bumped however makes sense.
+- App version: `1.1.0+6` (`pubspec.yaml`), i.e. versionName 1.1.0 /
+  versionCode 6. Earlier builds have already been published to Play Console
+  — `versionCode` must strictly increase on every future upload, or Play
+  Console rejects it; `versionName` can be bumped however makes sense.
 
 ### How the AAB is built
 

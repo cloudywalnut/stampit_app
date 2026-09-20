@@ -149,7 +149,7 @@ class HomeView extends StatelessWidget {
                           child: _DashboardTile(
                             icon: Icons.confirmation_number_rounded,
                             label: 'Redeem',
-                            description: "Redeem the coupon",
+                            description: "Redeem the customers's coupon",
                             color: c.brand,
                             onColor: c.brandInk,
                             onTap: () =>
@@ -233,6 +233,8 @@ class _DashboardTile extends StatelessWidget {
                 Text(
                   description,
                   textAlign: TextAlign.center,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: onColor.withValues(alpha: 0.75)),
                 ),
               ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:stampit_app/controllers/auth_controller.dart';
+import 'package:stampit_app/controllers/coupons_controller.dart';
 import 'package:stampit_app/controllers/redeem_controller.dart';
 import 'package:stampit_app/controllers/scan_controller.dart';
 import 'package:stampit_app/core/navigation.dart';
@@ -25,6 +26,7 @@ class StampItApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(create: (ctx) => ScanController(ctx.read<ScanService>())),
         ChangeNotifierProvider(create: (ctx) => RedeemController(ctx.read<CouponService>())),
+        ChangeNotifierProvider(create: (ctx) => CouponsController(ctx.read<CouponService>())),
       ],
       child: MaterialApp(
         navigatorKey: navigatorKey,
@@ -32,6 +34,15 @@ class StampItApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: buildAppTheme(AppColors.light),
         darkTheme: buildAppTheme(AppColors.dark),
+        // Fixed-height layouts (e.g. the home screen tiles) are sized for
+        // ~1.0x system font scale; some OEMs (OnePlus/OxygenOS) default to a
+        // larger step than others (Samsung/One UI), which was overflowing
+        // those tiles. Clamp so device font-size settings can't blow past it.
+        builder: (context, child) => MediaQuery.withClampedTextScaling(
+          minScaleFactor: 0.9,
+          maxScaleFactor: 1.15,
+          child: child!,
+        ),
         home: const AuthGate(),
       ),
     );
