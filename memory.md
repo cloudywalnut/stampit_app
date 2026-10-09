@@ -46,53 +46,7 @@ MVC-ish layering: `views/` (UI) → `controllers/` (ChangeNotifier) →
   screen instead of leaving whatever screen was open stuck on a raw
   "Not signed in." error.
 
-## Android build config
+## Android build config, versions, release & signing
 
-- `compileSdk` / `targetSdk`: **36**, hardcoded in `build.gradle.kts`
-  (Google Play requires targeting API 36 for uploads). Flutter's own
-  default (`flutter.compileSdkVersion`/`targetSdkVersion`) only reaches 36
-  starting Flutter 3.35 — revert to those once this project upgrades past
-  that.
-- `minSdk`: 21 (Flutter default; `flutter_launcher_icons` config also sets
-  `min_sdk_android: 21`)
-- NDK: `ndkVersion = flutter.ndkVersion` → resolves to **26.3.11579264**.
-  Not overridden in `build.gradle.kts`. Several plugins (`app_links`,
-  `mobile_scanner`, `path_provider_android`, `shared_preferences_android`,
-  `url_launcher_android`) request `27.0.12077973` instead — Gradle warns
-  but builds fine on 26.3.11579264. If a future plugin bump makes 27 a hard
-  requirement, add `ndkVersion = "27.0.12077973"` under `android { }`.
-- Java/Kotlin target: 11
-- Gradle wrapper: 8.10.2 (`android/gradle/wrapper/gradle-wrapper.properties`)
-- `mobile_scanner` constraint: `^7.0.0`, currently resolving to `7.0.1`.
-- Local Android SDK (`C:\Users\mzm\AppData\Local\Android\sdk`) has
-  platforms `android-35`/`android-36` and build-tools `34.0.0`/`35.0.1`
-  installed — all required by this toolchain, none of it unused cruft.
-
-### Signing / release build
-
-- Release signing config reads `android/key.properties`
-  (`keyAlias`, `keyPassword`, `storeFile`, `storePassword`) — this file is
-  gitignored and kept locally, not committed to the repo. No keystore file
-  is checked in either.
-- App version: `1.1.0+6` (`pubspec.yaml`), i.e. versionName 1.1.0 /
-  versionCode 6. Earlier builds have already been published to Play Console
-  — `versionCode` must strictly increase on every future upload, or Play
-  Console rejects it; `versionName` can be bumped however makes sense.
-
-### How the AAB is built
-
-Standard Flutter release flow, no custom scripts/CI wired up yet:
-
-```
-flutter build appbundle --release
-```
-
-This produces `build/app/outputs/bundle/release/app-release.aab`, signed
-with whatever `android/key.properties` points to. R8 shrinking/obfuscation
-runs on release builds (mapping output lands in
-`build/app/outputs/mapping/release/`), even though `minifyEnabled` isn't set
-explicitly in `build.gradle.kts` — this is the Flutter Gradle plugin's
-default for the release build type.
-
-A plain `flutter build apk --release` also works for local testing
-(`build/app/outputs/flutter-apk/app-release.apk`).
+See `README.md` — it is the single place for SDK/NDK versions (and which
+are Flutter defaults), the release build steps, app version, and signing.

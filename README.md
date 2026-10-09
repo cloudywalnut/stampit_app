@@ -3,7 +3,7 @@
 Flutter staff app for StampIt (scan/redeem). This file documents the
 Android toolchain versions, how to produce a new release build, and —
 most importantly — why the signing key can never change once this app is
-live on Play Store.
+live on Play Store. App structure and backend wiring live in `memory.md`.
 
 ## Versions this project actually uses
 
@@ -11,32 +11,49 @@ live on Play Store.
 |---|---|---|
 | Flutter | 3.29.3 (stable) | machine-wide install |
 | Dart SDK | ^3.7.2 | `pubspec.yaml` |
-| `compileSdk` / `targetSdk` | 36 (Android 16) | Hardcoded in `build.gradle.kts` (Google Play requires targeting API 36 for uploads) |
-| `minSdk` | 21 (Android 5.0) | Flutter's own default; also set explicitly for `flutter_launcher_icons` |
-| NDK | 26.3.11579264 | Flutter 3.29.3's bundled default (`ndkVersion = flutter.ndkVersion`) |
-| Gradle wrapper | 8.10.2 | `android/gradle/wrapper/gradle-wrapper.properties` |
-| Java/Kotlin target | 11 | `build.gradle.kts` |
+| `compileSdk` / `targetSdk` | 36 (Android 16) | `android/build.gradle.kts` — Flutter default is 35; Google Play requires 36 |
+| `minSdk` | 24 (Android 7.0) | `android/build.gradle.kts` — Flutter default is 21; Play Console rejected < 24. Also `min_sdk_android` for `flutter_launcher_icons` |
+| NDK | 27.0.12077973 | `android/build.gradle.kts` — Flutter default is 26.3.11579264; 27 is what the plugins request |
+| Android Gradle Plugin | 8.7.0 | `android/settings.gradle.kts` (Flutter default) |
+| Kotlin | 1.8.22 | `android/settings.gradle.kts` (Flutter default) |
+| Gradle wrapper | 8.10.2 | `android/gradle/wrapper/gradle-wrapper.properties` (Flutter default) |
+| Java/Kotlin target | 11 | `android/app/build.gradle.kts` (Flutter default) |
+| Build tools | 34.0.0 | Not set — Android Gradle Plugin 8.7.0's default |
 
-**`compileSdk`/`targetSdk` are the only hand-picked values** — everything
-else is what Flutter 3.29.3 asks Gradle for by default. Once this project
-upgrades past Flutter 3.35 (which defaults to compileSdk/targetSdk 36
-itself), the override can revert to
-`flutter.compileSdkVersion`/`flutter.targetSdkVersion`.
+`compileSdk`, `minSdk` and NDK are defined once in `android/build.gradle.kts`
+and applied to both the app and every Flutter plugin, so the whole build
+uses one value for each. Change them only there. After upgrading past
+Flutter 3.35 (which defaults to 36), the 36 override becomes redundant.
 
 `mobile_scanner`'s constraint is `^7.0.0`, currently resolving to `7.0.1`.
 
-**Known gap, not yet hit:** several plugins (`mobile_scanner`, `app_links`,
-`path_provider_android`, `shared_preferences_android`, `url_launcher_android`)
-request NDK `27.0.12077973`, above the `26.3.11579264` this project pins.
-Gradle falls back and builds fine (warning only, not an error). If a future
-plugin bump turns this into a hard requirement, install NDK 27 via Android
-Studio's SDK Manager (or `sdkmanager` once `cmdline-tools` is installed)
-and add `ndkVersion = "27.0.12077973"` under `android { }` in
-`android/app/build.gradle.kts`.
+**Local machine's Android SDK** (`C:\Users\mzm\AppData\Local\Android\sdk`):
 
-**Local machine's Android SDK has**: platforms `android-35` and
-`android-36`, build-tools `34.0.0` and `35.0.1` — all required by this
-toolchain.
+| What | Version | Where it comes from | Used by the app? |
+|---|---|---|---|
+| SDK platform | 35 | Flutter's default | No |
+| SDK platform | 36 | We added it | Yes |
+| Build tools | 34.0.0 | Default (through the Android Gradle Plugin) | Yes |
+| Build tools | 35.0.1 | Neither — probably Android Studio | No |
+| NDK | 26.3.11579264 | Flutter's default | No |
+| NDK | 27.0.12077973 | We added it | Yes |
+
+Also installed: `platform-tools` (adb — used for connecting phones) and
+CMake 3.22.1 (unused). The unused items total ~2.3 GB, mostly NDK 26.3.
+
+### How a release build happens, step by step
+
+1. **Flutter** reads `pubspec.yaml` (app version, packages).
+2. **Gradle** + **Android Gradle Plugin** take over and read the settings
+   (compileSdk 36, minSdk 24, targetSdk 36, NDK 27).
+3. **Dart code** is compiled by Flutter into native phone code.
+4. **Plugins' Android code** is compiled by Kotlin/Java against Android 36.
+5. **NDK** trims the native parts (Flutter engine, compiled Dart).
+6. **R8** shrinks unused Java/Kotlin code.
+7. **Build tools** pack code, icons and settings into one file (minSdk and
+   targetSdk get written in here).
+8. **Signing** with the upload key from `key.properties` → `app-release.aab`.
+9. **Play** checks it, re-signs with Google's key, and makes per-phone APKs.
 
 ## Building a new release AAB
 
@@ -57,7 +74,9 @@ flutter build appbundle --release
 - For local testing on a device instead of a Play Store upload, `flutter
   build apk --release` produces `build/app/outputs/flutter-apk/app-release.apk`.
 
-**Before every upload to Play Console**, bump the version in `pubspec.yaml`:
+**Current version:** `1.1.0+7` (versionCode 6 was used on closed testing).
+
+**Before every upload to Play Console** (any track), bump the version in `pubspec.yaml`:
 
 ```
 version: 1.0.1+3

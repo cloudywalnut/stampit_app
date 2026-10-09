@@ -13,17 +13,19 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
+val stampitCompileSdk: Int by rootProject.extra
+val stampitMinSdk: Int by rootProject.extra
+val stampitNdkVersion: String by rootProject.extra
+
 android {
     namespace = "digital.stampit.stampit_app"
-    // Hardcoded, not flutter.compileSdkVersion — Flutter 3.29.3 still
-    // defaults to 35 (only 3.35+ defaults to 36), but Google Play requires
-    // targeting API 36 for uploads as of August 31, 2026. AGP 8.7.0 already
-    // supports compileSdk 36 (needs only 8.1.0+), so this didn't need a
-    // Flutter/AGP upgrade — just this override. Revert to
-    // flutter.compileSdkVersion once the project's Flutter SDK is upgraded
-    // past 3.35 and this stops being necessary.
-    compileSdk = 36
-    ndkVersion = flutter.ndkVersion
+    // compileSdk, minSdk, targetSdk and ndkVersion come from the root
+    // android/build.gradle.kts, which also forces them onto every plugin.
+    // None are Flutter 3.29.3 defaults (35 / 21 / 35 / 26.3.11579264):
+    // Google Play requires targetSdk 36 and minSdk 24, and NDK 27 is what
+    // the plugins' AGP 8.7.0 asks for.
+    compileSdk = stampitCompileSdk
+    ndkVersion = stampitNdkVersion
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -39,10 +41,8 @@ android {
         applicationId = "digital.stampit.stampit_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        // Hardcoded to match compileSdk above — same Play Store API-36
-        // requirement, same "not a Flutter default yet" reasoning.
-        targetSdk = 36
+        minSdk = stampitMinSdk
+        targetSdk = stampitCompileSdk
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
